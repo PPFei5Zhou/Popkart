@@ -1,0 +1,152 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.easy.popkart.dao.mapper.UserMapper">
+    <resultMap id="user" type="com.easy.popkart.domain.dao.UserInfoDAO">
+        <id property="id" column="user_ID"/>
+        <result property="userName" column="user_UserName"/>
+        <result property="account" column="user_Account"/>
+        <result property="password" column="user_Password"/>
+        <result property="valid" column="user_Valid"/>
+        <result property="createBy" column="user_CreateBy"/>
+        <result property="createDt" column="user_CreateDt"/>
+        <result property="updateBy" column="user_UpdateBy"/>
+        <result property="UpdateDt" column="user_UpdateDt"/>
+        <collection property="userRoles" resultMap="roleInfo"/>
+    </resultMap>
+
+    <resultMap id="roleInfo" type="com.easy.popkart.domain.dao.RoleInfoDAO">
+        <id property="id" column="ri_ID"/>
+        <result property="roleName" column="ri_RoleName"/>
+        <result property="valid" column="ri_Valid"/>
+        <result property="createBy" column="ri_CreateBy"/>
+        <result property="createDt" column="ri_CreateDt"/>
+        <result property="updateBy" column="ri_UpdateBy"/>
+        <result property="updateDt" column="ri_UpdateDt"/>
+    </resultMap>
+
+    <resultMap id="userRole" type="com.easy.popkart.domain.dao.UserRoleDAO">
+        <id property="id" column="ur_ID"/>
+        <result property="userID" column="ur_UserID"/>
+        <result property="roleID" column="ur_RoleID"/>
+        <result property="valid" column="ur_Valid"/>
+        <association property="roleInfo" resultMap="roleInfo"/>
+    </resultMap>
+
+    <sql id="UserColumn">
+        ui.ID AS user_ID,
+        ui.UserName AS user_UserName,
+        ui.Account AS user_Account,
+        ui.Password AS user_Password,
+        ui.Valid AS user_Valid,
+        ui.CreateBy AS user_CreateBy,
+        ui.CreateDt AS user_CreateDt,
+        ui.UpdateBy AS user_UpdateBy,
+        ui.UpdateDt AS user_UpdateDt,
+    </sql>
+
+    <sql id="RoleInfoColumn">
+        ri.ID as ri_ID,
+        ri.RoleName as ri_RoleName,
+        ri.Valid as ri_Valid,
+        ri.CreateBy as ri_CreateBy,
+        ri.CreateDt as ri_CreateDt,
+        ri.UpdateBy as ri_UpdateBy,
+        ri.UpdateDt as ri_UpdateDt,
+    </sql>
+
+    <sql id="UserRoleColumn">
+        ur.ID as ur_ID,
+        ur.UserID as ur_UserID,
+        ur.RoleID as ur_RoleID,
+        ur.Valid as ur_Valid,
+    </sql>
+
+    <insert id="saveObject">
+        INSERT INTO userinfo
+        (
+            ID,
+            UserName,
+            Account,
+            Password,
+            CreateBy,
+            CreateDt,
+            Valid
+        )
+        VALUES
+        (
+            #{id},
+            #{userName},
+            #{account},
+            #{password},
+            #{createBy},
+            now(),
+            #{valid}
+        )
+    </insert>
+
+    <update id="updateObject">
+        UPDATE
+        userinfo
+        <trim prefix="SET" suffixOverrides=",">
+            <if test="userName != null and userName != ''">
+                UserName = #{userName},
+            </if>
+            <if test="password != null and password != ''">
+                Password = #{password},
+            </if>
+            <if test="updateBy != null and updateBy != ''">
+                UpdateBy = #{updateBy}
+            </if>
+            <if test="1 = 1">
+                UpdateDt = now(),
+            </if>
+        </trim>
+        WHERE
+            ID = #{id}
+        AND
+            Valid = 1
+    </update>
+
+    <update id="removeObject">
+        UPDATE
+            userinfo
+        SET
+            Valid = 0
+        WHERE
+            ID = #{id}
+    </update>
+
+    <select id="listUser" resultMap="user">
+        select
+        <trim suffixOverrides=",">
+            <include refid="UserColumn"/>
+            <include refid="RoleInfoColumn"/>
+            <include refid="UserRoleColumn"/>
+        </trim>
+        from userinfo ui
+        left join userrole ur on ur.UserID = ui.ID and ur.Valid = 1
+        left join roleinfo ri on ri.ID = ur.RoleID and ri.Valid = 1
+        <where>
+            AND ui.Valid = 1
+            <if test="userAccount != null and userAccount != ''">
+                AND ui.Account = #{userAccount}
+            </if>
+        </where>
+    </select>
+
+    <select id="userInfo" resultMap="user">
+        select
+        <trim suffixOverrides=",">
+            <include refid="UserColumn"/>
+            <include refid="RoleInfoColumn"/>
+            <include refid="UserRoleColumn"/>
+        </trim>
+        from userinfo ui
+        left join userrole ur on ur.UserID = ui.ID and ur.Valid = 1
+        left join roleinfo ri on ri.ID = ur.RoleID and ri.Valid = 1
+        <where>
+            AND ui.Valid = 1
+            AND ui.Account = #{account}
+        </where>
+    </select>
+</mapper>
